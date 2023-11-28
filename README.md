@@ -4,6 +4,7 @@
 Provisionar uma arquitetura na AWS utilizando o Terraform, que englobe o uso de um Application Load Balancer (ALB), instâncias EC2 com Auto Scaling e um banco de dados RDS.
 
 ## Desenho da arquitetura
+![Arquitetura](./imagem/arquitetura.png)
 
 ## Explicando a arquitetura
 
