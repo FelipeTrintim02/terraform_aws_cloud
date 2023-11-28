@@ -92,7 +92,11 @@ Crie uma conta na AWS, configure as credenciais e utilize as credenciais IAM par
 Com tudo isso pronto, clone o repositório e execute o seguinte comando para iniciar o terraform:
 ```
 terraform init -upgrade
+```
+```
 terraform plan
+```
+```
 terraform apply -auto-approve
 ```
 
