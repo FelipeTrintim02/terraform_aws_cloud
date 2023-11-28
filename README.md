@@ -3,9 +3,11 @@
 ## Objetivo do projeto
 Provisionar uma arquitetura na AWS utilizando o Terraform, que englobe o uso de um Application Load Balancer (ALB), instâncias EC2 com Auto Scaling e um banco de dados RDS.
 
-## Explicando cada parte da aquitetura implementada e as motivações de cada escolha
+## Desenho da arquitetura
 
-### VPC (Virtual Private Cloud)
+## Explicando a arquitetura
+
+### VPC (Virtual Private Cloud) 
 A VPC é um serviço que permite a criação de uma rede virtual na AWS, onde é possível definir um range de IPs, criar subnets, configurar rotas, entre outros. A VPC é o primeiro passo para a criação de uma arquitetura na AWS, pois é nela que serão criados os outros recursos.
 
 No caso do projeto utilizamos a região us-east-1 (N. Virginia) por ter um preço mais acessível e por ser a região padrão da conta utilizada. 
@@ -78,9 +80,6 @@ Peguei a aplicação de um repositório e implementei ela no projeto, sendo que 
 entre outros ...
 
 ## Custos 
-
-
-## Desenho da arquitetura
 
 ## Script de instalação da aplicação
 Primeiramente siga as intruções para instalar o Terraform em sua máquina: https://learn.hashicorp.com/tutorials/terraform/install-cli
