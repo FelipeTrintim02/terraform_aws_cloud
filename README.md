@@ -50,3 +50,67 @@ Criamos também uma policy, sendo que a policy é responsável por definir o que
 Por fim, fizemos um alarme, sendo que o alarme é responsável por monitorar a capacidade atual e a capacidade desejada, sendo que se a capacidade atual for maior que 70% da capacidade desejada, o alarme irá disparar, e se a capacidade atual for menor que 10% da capacidade desejada, o alarme também irá disparar.
 
 ### RDS (Relational Database Service)
+O RDS é um serviço que permite a criação de bancos de dados relacionais na AWS, sendo que é possível escolher o tipo de banco de dados, o tipo de instância, a quantidade de memória, a quantidade de processadores, entre outros. O RDS é um serviço muito importante para a criação de uma arquitetura na AWS, pois é nele que será criado o banco de dados que irá armazenar os dados da aplicação.
+
+Assim como em todos os módulos, fizemos um security group para o RDS, sendo que essa seguranca serve para controlar o tráfego de rede permitido para o próprio banco de dados na AWS. Ele define as regras de entrada e saída de tráfego, especificando quais tipos de comunicação são permitidos e de onde podem vir. No meu caso, permiti o apenas portas e protocolos expecifícos, mas para ficar mais fácil o acesso liberei para todos os tipos de entradas e saídas, com o protocolo -1, porta 0 para 0 e o CIDR 0.0.0.0/0.
+
+Para proteger a database, não deixei ele em um IP público e sim privado, tendo um db_subnet_group, com as duas subnets privadas criadas anteriormente, sendo que o db_subnet_group é responsável por definir em quais subnets o banco de dados irá ser criado. Para que o banco de dados possa se comunicar com a internet, foi criada uma route table de rotas da VPC que permite a comunicação entre o banco de dados e a internet.
+
+Partindo para a própria database, criamos um banco de dados MySQL, com o nome "dbfelipe", com o usuário "root" e a senha "admin123", com o tipo de instância db.t2.micro, com o armazenamento de 20GB, com o backup automático habilitado e com o Multi-AZ habilitado, sendo que o Multi-AZ é responsável por criar uma réplica do banco de dados em outra zona de disponibilidade, aumentando a disponibilidade do banco de dados e garantindo a redundância em caso de falhas em uma das zonas de disponibilidade, com um backup retido por 7 dias para garantir a segurança dos dados. Essa base foi conectada com o security group e com o db_subnet_group criados anteriormente.
+
+### S3 (Simple Storage Service)
+O S3 é um serviço que permite o armazenamento de arquivos na AWS, sendo que é possível armazenar qualquer tipo de arquivo, como por exemplo, imagens, vídeos, documentos, entre outros. O S3 é um serviço muito importante para a criação de uma arquitetura na AWS, pois é nele que serão armazenados os arquivos da aplicação.
+
+Primeiramente criamos um bucket, sendo que o bucket é o local onde os arquivos serão armazenados, sendo que é possível definir o nome do bucket, a região onde ele será criado, entre outros. No meu caso, criei um bucket com o nome "felipe-bucket", com a região us-east-1 (N. Virginia), sendo que a região us-east-1 é a região padrão da conta utilizada.
+
+### Aplicação
+Peguei a aplicação de um repositório e implementei ela no projeto, sendo que a aplicação é uma Fast-API com CRUD, sendo que ela é capaz de criar, ler, atualizar e deletar dados de um banco de dados MySQL. A aplicação é muito importante para a criação de uma arquitetura na AWS, pois é nela que será criada e executada.
+
+### Melhorias futuras
+1. Segurança
+- Security Groups Mais Estruturados: Em vez de permitir todos os tipos de tráfego, considere restringir por IPs específicos, reduzindo a superfície de ataque.
+- Criptografia de Dados Sensíveis: Para dados confidenciais, como senhas no código ou na base de dados, considere implementar criptografia.
+
+2.  Resiliência e Backup
+- Monitoramento Avançado e Recuperação de Falhas: Integração de sistemas de monitoramento mais avançados, como CloudWatch Logs e EventBridge, para uma detecção e resposta mais rápidas a falhas.
+- Aprimoramento de Backup e Restauração: Ajustar a frequência de backups, explorar snapshots EBS regulares e avaliar a eficiência do período de retenção dos backups.
+
+entre outros ...
+
+## Custos 
+
+
+## Desenho da arquitetura
+
+## Script de instalação da aplicação
+Primeiramente siga as intruções para instalar o Terraform em sua máquina: https://learn.hashicorp.com/tutorials/terraform/install-cli
+
+Com o terraform instalado, instale o AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+Crie uma conta na AWS, configure as credenciais e utilize as credenciais IAM para autenticar o terraform no provedor AWS.
+
+Com tudo isso pronto, clone o repositório e execute o seguinte comando para iniciar o terraform:
+```
+terraform init -upgrade
+terraform plan
+terraform apply -auto-approve
+```
+
+para destruir a infraestrutura criada, execute o seguinte comando:
+```
+terraform destroy -auto-approve
+```
+
+## Checando o funcionamento do projeto na AWS
+Para checar o funcionamento do projeto na AWS, acesse o painel da AWS e vá até o serviço EC2, e verifique se as instâncias EC2 estão sendo criadas e destruídas de acordo com a capacidade desejada e a capacidade atual.
+
+Vá até o serviço RDS e verifique se o banco de dados está sendo criado e se está sendo criado uma réplica do banco de dados em outra zona de disponibilidade.
+
+Vá até o serviço S3 e verifique se o bucket está sendo criado.
+
+Vá até o serviço CloudWatch e verifique se o alarme está sendo disparado de acordo com a capacidade desejada e a capacidade atual.
+
+Vá até Load Balancer e verifique se o ALB está sendo criado e se está distribuindo o tráfego para as instâncias EC2. Clique no DNS do ALB e verifique se a aplicação está funcionando corretamente.
+Ainda dentro do load balancer, verifique se o targuet grupo linkado a ele está saudável.
+
+Teste o auto scaling, destruindo uma máquina e verificando se o auto scaling cria uma nova máquina para substituí-la.
