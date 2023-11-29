@@ -355,31 +355,44 @@ resource "aws_launch_template" "web_template" {
     instance_type = var.settings.web_app.instance_type
     user_data = base64encode(<<-EOF
       #!/bin/bash
+      sudo touch app.log 
       export DEBIAN_FRONTEND=noninteractive
-      
+
+      sudo apt -y remove needrestart
+      echo "fez o needrestart" >> app.log
       sudo apt-get update
+      echo "fez o update" >> app.log
       sudo apt-get install -y python3-pip python3-venv git
+      echo "fez o install de tudo" >> app.log
 
       # Criação do ambiente virtual e ativação
       python3 -m venv /home/ubuntu/myappenv
+      echo "criou o env" >> app.log
       source /home/ubuntu/myappenv/bin/activate
+      echo "ativou o env" >> app.log
 
       # Clonagem do repositório da aplicação
       git clone https://github.com/ArthurCisotto/aplicacao_projeto_cloud.git /home/ubuntu/myapp
+      echo "clonou o repo" >> app.log
 
       # Instalação das dependências da aplicação
       pip install -r /home/ubuntu/myapp/requirements.txt
+      echo "instalou os requirements" >> app.log
 
       sudo apt-get install -y uvicorn
+      echo "instalou o uvicorn" >> app.log
   
       # Configuração da variável de ambiente para o banco de dados
       export DATABASE_URL="mysql+pymysql://root:root12345@${aws_db_instance.database.endpoint}/dbfelipe"
+      echo "exportou o url" >> app.log
 
       cd /home/ubuntu/myapp
       # Inicialização da aplicação
       uvicorn main:app --host 0.0.0.0 --port 80 
-      EOF 
+      echo "inicializou" >> app.log
+    EOF
     )
+
 
     network_interfaces {
         security_groups = [ aws_security_group.web_sg.id ]
@@ -467,4 +480,71 @@ resource "aws_cloudwatch_metric_alarm" "felipe_alarme_descer" {
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.web_asg.name
   }
+}
+
+resource "aws_autoscaling_policy" "web_asg_policy" {
+  name                    = "web_asg_policy"
+  policy_type             = "TargetTrackingScaling"
+  autoscaling_group_name  = aws_autoscaling_group.web_asg.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label = "${split("/", aws_lb.lb.id)[1]}/${split("/", aws_lb.lb.id)[2]}/${split("/", aws_lb.lb.id)[3]}/targetgroup/${split("/", aws_lb_target_group.tg.arn )[1]}/${split("/", aws_lb_target_group.tg.arn)[2]}"
+    }
+
+    target_value = 1000
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "web_asg_alarm" {
+  alarm_name = "web_asg_alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods = "1"
+  metric_name = "RequestCountPerTarget"
+  namespace = "AWS/ApplicationELB"
+  period = "60"
+  statistic = "Average"
+  threshold = "1000"
+  alarm_description = "This metric monitors alb request count"
+  alarm_actions = [aws_autoscaling_policy.web_asg_policy.arn]
+  dimensions = {
+    LoadBalancer = aws_lb.lb.arn
+  }
+}
+
+#####
+# Locust #
+#####
+
+module "loadtest-distribuited" {
+    source  = "marcosborges/loadtest-distribuited/aws"
+
+    name = "felipelocust"
+    nodes_size = var.node_size
+    executor = "locust"
+    loadtest_dir_source = "./locust/"
+    loadtest_entrypoint = <<-EOT
+        python3 -m pip install urllib3==1.26.15
+         nohup locust  -f ../loadtest/locust.py --expect-workers=2  --master > ../loadtest/locust-leader.out 2>&1 &
+    EOT
+    node_custom_entrypoint = <<-EOT
+        python3 -m pip install urllib3==1.26.15
+        nohup locust -f ../loadtest/locust.py  --worker --master-host={LEADER_IP} > ../loadtest/locust-worker.out 2>&1 &
+    EOT
+    subnet_id = aws_subnet.felipe_public_subnet_1.id
+    locust_plan_filename = var.locust_plan_filename
+}
+
+data "aws_security_group" "loadtest_sg" {
+  name = "felipelocust-loadtest-seg"  # Replace with the actual name of your security group
+  depends_on = [module.loadtest-distribuited]
+}
+resource "aws_security_group_rule" "loadtest_sg_rule" {
+  type              = "ingress"
+  from_port         = 8089
+  to_port           = 8089
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = data.aws_security_group.loadtest_sg.id
 }

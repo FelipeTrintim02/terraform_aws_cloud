@@ -30,3 +30,8 @@ output "link_to_web" {
   description = "link to web app"
   value = "http://${aws_lb.lb.dns_name}/docs"
 }
+
+output "dashboard_url" {
+    value = "http://${coalesce(module.loadtest-distribuited.leader_public_ip, module.loadtest-distribuited.leader_private_ip)}:8089"
+    description = "The URL of the Locust UI."
+}

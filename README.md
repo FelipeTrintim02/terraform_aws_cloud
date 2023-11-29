@@ -52,7 +52,7 @@ Depois criamos um launch template, sendo que o launch template é um modelo que 
 
 Logo em seguida o Auto scaling group foi criado com uma capacidade desejada de 3 instâncias EC2, com no mínimo 2 e no máximo 6. Linkamos ele a um IP público, ao target group e ao launch template na versão mais recente. Para checar a saúde das instâncias EC2, foi criado um health check, sendo que o health check é responsável por verificar se as instâncias EC2 estão saudáveis, sendo que se uma instância EC2 não estiver saudável, o Auto Scaling irá destruir ela e criar uma nova instância EC2 para substituí-la.
 
-Criamos também uma policy, sendo que a policy é responsável por definir o que o Auto Scaling irá fazer quando a capacidade desejada for maior que a capacidade atual e quando a capacidade desejada for menor que a capacidade atual. No meu caso, defini que quando a capacidade desejada for maior que 70% da capacidade atual, será criado uma nova instância EC2, e quando a capacidade desejada for menor 10% da capacidade atual, a instância será destruída.
+Criamos também uma policy, sendo que a policy é responsável por definir o que o Auto Scaling irá fazer quando a capacidade desejada for maior que a capacidade atual e quando a capacidade desejada for menor que a capacidade atual. No meu caso, defini que quando a capacidade desejada for maior que 70% da capacidade atual, será criado uma nova instância EC2, e quando a capacidade desejada for menor 10% da capacidade atual, a instância será destruída. Outra policy foi a de controle de requisições por segundo, sendo que a policy é responsável por definir o que o Auto Scaling irá fazer quando a quantidade de requisições por segundo for maior que 1000. No meu caso, será criada uma nova instância EC2.
 
 Por fim, fizemos um alarme, sendo que o alarme é responsável por monitorar a capacidade atual e a capacidade desejada, sendo que se a capacidade atual for maior que 70% da capacidade desejada, o alarme irá disparar, e se a capacidade atual for menor que 10% da capacidade desejada, o alarme também irá disparar.
 
@@ -64,7 +64,18 @@ Assim como em todos os módulos, fizemos um security group para o RDS, sendo que
 
 Para proteger a database, não deixei ele em um IP público e sim privado, tendo um db_subnet_group, com as duas subnets privadas criadas anteriormente, sendo que o db_subnet_group é responsável por definir em quais subnets o banco de dados irá ser criado. Para que o banco de dados possa se comunicar com a internet, foi criada uma route table de rotas da VPC que permite a comunicação entre o banco de dados e a internet.
 
-Partindo para a própria database, criamos um banco de dados MySQL, com o nome "dbfelipe", com o usuário "root" e a senha "admin123", com o tipo de instância db.t2.micro, com o armazenamento de 20GB, com o backup automático habilitado e com o Multi-AZ habilitado, sendo que o Multi-AZ é responsável por criar uma réplica do banco de dados em outra zona de disponibilidade, aumentando a disponibilidade do banco de dados e garantindo a redundância em caso de falhas em uma das zonas de disponibilidade, com um backup retido por 7 dias para garantir a segurança dos dados. Essa base foi conectada com o security group e com o db_subnet_group criados anteriormente.
+Partindo para a própria database, criamos um banco de dados MySQL, com o nome "dbfelipe", com o usuário "root" e a senha "root12345", com o tipo de instância db.t2.micro, com o armazenamento de 20GB, com o backup automático habilitado e com o Multi-AZ habilitado, sendo que o Multi-AZ é responsável por criar uma réplica do banco de dados em outra zona de disponibilidade, aumentando a disponibilidade do banco de dados e garantindo a redundância em caso de falhas em uma das zonas de disponibilidade, com um backup retido por 7 dias para garantir a segurança dos dados. Essa base foi conectada com o security group e com o db_subnet_group criados anteriormente.
+
+### Locust
+
+O Locust é uma ferramenta de teste de carga de código aberto, sendo que ele é capaz de simular milhares de usuários simultâneos, sendo que é possível definir o número de usuários, a taxa de usuários, entre outros. O Locust é muito importante para a criação de uma arquitetura na AWS, pois é nele que será testado o desempenho da aplicação. Em resumo isso é uma distribuição de teste de carga usando o framework Locust na AWS.
+
+Primeiramente criamos um security group para o Locust, sendo que essa seguranca serve para controlar o tráfego de rede permitido para o próprio Locust na AWS. Ele define as regras de entrada e saída de tráfego, especificando quais tipos de comunicação são permitidos e de onde podem vir. No meu caso, permiti o apenas portas e protocolos expecifícos, como por exemplo, a porta 8089 e o protocolo HTTP vindos de qualquer lugar, CIDR 0.0.0.0/0. Tomei essa decisão pois o Locust é um serviço que precisa estar acessível para a internet, sendo que ele é o ponto de entrada da aplicação, recebendo as requisições e as distribui para as instâncias EC2.
+
+Depois criei um loadtest distributed que define a quantidade de workers para o teste de distribuição de carga. No meu caso, criei 2 workers, sendo que cada worker é responsável por simular 1000 usuários simultâneos, sendo que o teste de carga irá simular 2000 usuários simultâneos. O loadtest distributed foi linkado ao security group criado anteriormente e a um IP público, sendo que o IP público é necessário para que o Locust possa ser acessado pela internet. Ainda nesse module são criados
+o mestre e os workers, sendo que o mestre é responsável por receber as requisições e distribuir para os workers, e os workers são responsáveis por simular os usuários simultâneos. Os workers estão ligados ao IP do mestre.
+
+Tudo isso está ligado a uma arquivo em python que ele define um comportamento para esse usuário durante o teste. Nesse caso específico, quando esse usuário é acionado, ele faz uma requisição GET para a raiz do site especificado pela URL base do Locust (self.client.get("/")). Em outras palavras, ele simula o comportamento de acessar a página inicial do site.
 
 ### S3 (Simple Storage Service)
 
@@ -130,7 +141,10 @@ Vá até o serviço S3 e verifique se o bucket está sendo criado.
 
 Vá até o serviço CloudWatch e verifique se o alarme está sendo disparado de acordo com a capacidade desejada e a capacidade atual.
 
-Vá até Load Balancer e verifique se o ALB está sendo criado e se está distribuindo o tráfego para as instâncias EC2. Clique no DNS do ALB e verifique se a aplicação está funcionando corretamente.
-Ainda dentro do load balancer, verifique se o targuet grupo linkado a ele está saudável.
+Vá até Load Balancer e verifique se o ALB está sendo criado e se está distribuindo o tráfego para as instâncias EC2. Clique no DNS do ALB e verifique se a aplicação está funcionando corretamente. O link do ALB é um dos outputs do terraform.
+Ainda dentro do load balancer, verifique se o target grupo linkado a ele está saudável.
 
 Teste o auto scaling, destruindo uma máquina e verificando se o auto scaling cria uma nova máquina para substituí-la.
+
+Para testar o lucost tem q acessar o link: http://<ip_publico_locust>:8089, sel=ndo ele um dos outputs do terraform.
+Com isso vai pegar o link do crud e colocar no site do locust, e vai fazer o teste de carga com uma quantidade alta de usuários, exemplo (1300). Assim quando ele recebre muitos requests ele vai criar mais instâncias para atender a demanda.

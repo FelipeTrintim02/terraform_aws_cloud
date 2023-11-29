@@ -33,4 +33,15 @@ variable "settings" {
     }
 }
 
+variable "node_size" {
+    description = "number of nodes"
+    type        = number
+    default     = 3
+}
+
+variable "locust_plan_filename" {
+    description = "locust plan filename"
+    type        = string
+    default     = "locust.py"
+}
 
