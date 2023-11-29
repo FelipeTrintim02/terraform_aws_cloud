@@ -58,10 +58,6 @@ resource "aws_subnet" "felipe_public_subnet_1" {
   cidr_block              = "10.0.1.0/24" #32 IPs
   map_public_ip_on_launch = true          # public subnet
   availability_zone       = "us-east-1a"
-
-  tags = {
-    Name = "felipe_public_subnet_1"
-  }
 }
 
 # Creating 2nd public subnet 
@@ -70,10 +66,6 @@ resource "aws_subnet" "felipe_public_subnet_2" {
   cidr_block              = "10.0.2.0/24" #32 IPs
   map_public_ip_on_launch = true           # public subnet
   availability_zone       = "us-east-1b"
-
-  tags = {
-    Name = "felipe_public_subnet_2"
-  }
 }
 
 # Creating 1st private subnet 
@@ -82,10 +74,6 @@ resource "aws_subnet" "felipe_private_subnet_1" {
   cidr_block              = "10.0.101.0/24" #32 IPs
   map_public_ip_on_launch = false         # private subnet
   availability_zone       = "us-east-1a"
-
-  tags = {
-    Name = "felipe_private_subnet_1"
-  }
 }
 
 # Creating 2nd private subnet
@@ -94,10 +82,6 @@ resource "aws_subnet" "felipe_private_subnet_2" {
   cidr_block              = "10.0.102.0/24" #32 IPs
   map_public_ip_on_launch = false          # private subnet
   availability_zone       = "us-east-1b"
-
-  tags = {
-    Name = "felipe_private_subnet_2"
-  }
 }
 
 #####
@@ -174,7 +158,7 @@ resource "aws_security_group" "rds_sg" {
   }
 
   tags = {
-    Name = "felipe_rds_sg"
+    Name = "felipe_sg_rds"
   }
 }
 
@@ -293,7 +277,7 @@ resource "aws_eip" "eip" {
   depends_on = [aws_internet_gateway.igw]
   vpc        = true
   tags = {
-    Name = "felipe_EIP_for_NAT"
+    Name = "EIP_for_NAT"
   }
 }
 
@@ -306,7 +290,7 @@ resource "aws_nat_gateway" "nat_for_private_subnet" {
   subnet_id     = aws_subnet.felipe_public_subnet_1.id # nat should be in public subnet
 
   tags = {
-    Name = "felipe_nat_for_private_subnet"
+    Name = "Sh NAT for private subnet"
   }
 
   depends_on = [aws_internet_gateway.igw]
@@ -358,10 +342,6 @@ resource "aws_lb_listener" "listener" {
     default_action {
         type = "forward"
         target_group_arn = aws_lb_target_group.tg.arn
-    }
-
-    tags = {
-        Name = "felipe_listener"
     }
 }
 
@@ -429,8 +409,8 @@ resource "aws_launch_template" "web_template" {
 
 resource "aws_autoscaling_group" "web_asg" {
     name = "web_asg"
-    desired_capacity = 2
-    max_size = 4
+    desired_capacity = 3
+    max_size = 6
     min_size = 2
     
     vpc_zone_identifier = [aws_subnet.felipe_public_subnet_1.id]
@@ -483,10 +463,6 @@ resource "aws_cloudwatch_metric_alarm" "felipe_alarme_subir" {
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.web_asg.name
   }
-
-  tags = {
-    Name = "felipe_alarme_subir"
-  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "felipe_alarme_descer" {
@@ -503,10 +479,6 @@ resource "aws_cloudwatch_metric_alarm" "felipe_alarme_descer" {
   ok_actions = [aws_autoscaling_policy.felipe_subir_escala.arn]
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.web_asg.name
-  }
-
-  tags = {
-    Name = "felipe_alarme_descer"
   }
 }
 
@@ -539,10 +511,6 @@ resource "aws_cloudwatch_metric_alarm" "web_asg_alarm" {
   dimensions = {
     LoadBalancer = aws_lb.lb.arn
   }
-
-  tags = {
-    Name = "web_asg_alarm_request_count"
-  }
 }
 
 #####
@@ -566,25 +534,17 @@ module "loadtest-distribuited" {
     EOT
     subnet_id = aws_subnet.felipe_public_subnet_1.id
     locust_plan_filename = var.locust_plan_filename
-
-    tags = {
-        Name = "felipelocust"
-    }
 }
 
-data "aws_security_group" "locust_sg" {
-  name = "felipelocust-loadtest-sg"  # Replace with the actual name of your security group
+data "aws_security_group" "loadtest_sg" {
+  name = "felipelocust-loadtest-seg"  
   depends_on = [module.loadtest-distribuited]
-
-  tags = {
-    Name = "felipelocust-loadtest-sg"
-  }
 }
-resource "aws_security_group_rule" "locust_sg_rule" {
+resource "aws_security_group_rule" "loadtest_sg_rule" {
   type              = "ingress"
   from_port         = 8089
   to_port           = 8089
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = data.aws_security_group.locust_sg.id
+  security_group_id = data.aws_security_group.loadtest_sg.id
 }
