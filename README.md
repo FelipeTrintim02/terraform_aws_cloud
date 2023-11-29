@@ -81,7 +81,7 @@ Tudo isso está ligado a uma arquivo em python que ele define um comportamento p
 
 O S3 é um serviço que permite o armazenamento de arquivos na AWS, sendo que é possível armazenar qualquer tipo de arquivo, como por exemplo, imagens, vídeos, documentos, entre outros. O S3 é um serviço muito importante para a criação de uma arquitetura na AWS, pois é nele que serão armazenados os arquivos da aplicação.
 
-Primeiramente criamos um bucket, sendo que o bucket é o local onde os arquivos serão armazenados, sendo que é possível definir o nome do bucket, a região onde ele será criado, entre outros. No meu caso, criei um bucket com o nome "felipe-bucket", com a região us-east-1 (N. Virginia), sendo que a região us-east-1 é a região padrão da conta utilizada.
+Primeiramente criamos um bucket, sendo que o bucket é o local onde os arquivos serão armazenados, sendo que é possível definir o nome do bucket, a região onde ele será criado, entre outros. No meu caso, criei um bucket com o nome "felipe-bucket", com a região us-east-1 (N. Virginia), sendo que a região us-east-1 é a região padrão da conta utilizada. O bucket tem q ser criado direto no site da AWS na parte do S3.
 
 ### Aplicação
 
