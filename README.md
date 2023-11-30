@@ -16,7 +16,7 @@ A VPC é um serviço que permite a criação de uma rede virtual na AWS, onde é
 
 No caso do projeto utilizamos a região us-east-1 (N. Virginia) por ter um preço mais acessível e por ser a região padrão da conta utilizada.
 
-Adotamos uma rede com CIDR 10.0.0.0;16, que permite a criação de até 65.536 IPs, tendo muita flexibilidade para a criação de subnets e instâncias, podendo ser expandida facilmente caso necessário.
+Adotamos uma rede com CIDR 10.0.0.0/16, que permite a criação de até 65.536 IPs, tendo muita flexibilidade para a criação de subnets e instâncias, podendo ser expandida facilmente caso necessário.
 
 Para a criação das subnets, optamos por criar 2 subnets públicas e 2 subnets privadas, sendo que as subnets públicas são subnets que possuem acesso à internet e as subnets privadas não possuem acesso à internet.
 
@@ -27,6 +27,8 @@ Para a criação das subnets públicas, optamos por criar uma subnet para cada z
 Os IPs públicos necessitam de um gate para poderem se comunicar com a internet, sendo que para isso foi criado um Internet Gateway (IGW) que permite a comunicação entre a VPC e a internet. Para que as subnets públicas possam se comunicar com a internet, foi criada uma route table de rotas da VPC que permite a comunicação entre a VPC e a internet.
 
 Já os IPs privados necessitam de um gate para primeiro conseguirem se comunicar com os IPs públicos e depois com a internet, sendo criado um NAT Gateway que permite a comunicação entre a internet, IPs públicos e IPs privados. Para que as subnets privadas possam se comunicar com os IPs públicos e com a internet, foi criada uma route table de rotas da VPC que permite a comunicação entre eles.
+
+<img src="/img/Vpc.png">
 
 ### ALB (Application Load Balancer)
 
@@ -39,6 +41,8 @@ Depois criamos o próprio Application Load Balancer, usamos o security group cri
 Logo em seguida criamos um Target group que é responsável por direcionar o tráfego do ALB para instâncias EC2 específicas. Associamos ele ao VPC criado anteriormente, especificamos o protocolo HTTP e a porta 80, pois o ALB irá receber requisições HTTP e irá distribuir para as instâncias EC2. Também foi criado um health check para o target group, sendo que o health check é responsável por verificar se as instâncias EC2 estão saudáveis, sendo que se uma instância EC2 não estiver saudável, o ALB não irá distribuir o tráfego para ela.
 
 Por fim, criamos um listener para o ALB, sendo que o listener é responsável por receber as requisições e distribuir para as instâncias EC2. Configuramos o listener para receber requisições HTTP na porta 80 e distribuir para o target group criado anteriormente.
+
+<img src="/img/LoadBalancer.png">
 
 ### EC2 (Elastic Compute Cloud) com Auto Scaling
 
@@ -56,6 +60,10 @@ Criamos também uma policy, sendo que a policy é responsável por definir o que
 
 Por fim, fizemos um alarme, sendo que o alarme é responsável por monitorar a capacidade atual e a capacidade desejada, sendo que se a capacidade atual for maior que 70% da capacidade desejada, o alarme irá disparar, e se a capacidade atual for menor que 10% da capacidade desejada, o alarme também irá disparar.
 
+<img src="/img/Instancias.png">
+
+<img src="/img/AutoScaling.png">
+
 ### RDS (Relational Database Service)
 
 O RDS é um serviço que permite a criação de bancos de dados relacionais na AWS, sendo que é possível escolher o tipo de banco de dados, o tipo de instância, a quantidade de memória, a quantidade de processadores, entre outros. O RDS é um serviço muito importante para a criação de uma arquitetura na AWS, pois é nele que será criado o banco de dados que irá armazenar os dados da aplicação.
@@ -65,6 +73,8 @@ Assim como em todos os módulos, fizemos um security group para o RDS, sendo que
 Para proteger a database, não deixei ele em um IP público e sim privado, tendo um db_subnet_group, com as duas subnets privadas criadas anteriormente, sendo que o db_subnet_group é responsável por definir em quais subnets o banco de dados irá ser criado. Para que o banco de dados possa se comunicar com a internet, foi criada uma route table de rotas da VPC que permite a comunicação entre o banco de dados e a internet.
 
 Partindo para a própria database, criamos um banco de dados MySQL, com o nome "dbfelipe", com o usuário "root" e a senha "root12345", com o tipo de instância db.t2.micro, com o armazenamento de 20GB, com o backup automático habilitado e com o Multi-AZ habilitado, sendo que o Multi-AZ é responsável por criar uma réplica do banco de dados em outra zona de disponibilidade, aumentando a disponibilidade do banco de dados e garantindo a redundância em caso de falhas em uma das zonas de disponibilidade, com um backup retido por 7 dias para garantir a segurança dos dados. Essa base foi conectada com o security group e com o db_subnet_group criados anteriormente.
+
+<img src="/img/Databases.png">
 
 ### Locust
 
@@ -77,15 +87,21 @@ o mestre e os workers, sendo que o mestre é responsável por receber as requisi
 
 Tudo isso está ligado a uma arquivo em python que ele define um comportamento para esse usuário durante o teste. Nesse caso específico, quando esse usuário é acionado, ele faz uma requisição GET para a raiz do site especificado pela URL base do Locust (self.client.get("/")). Em outras palavras, ele simula o comportamento de acessar a página inicial do site.
 
+<img src="/img/Locust.png">
+
 ### S3 (Simple Storage Service)
 
 O S3 é um serviço que permite o armazenamento de arquivos na AWS, sendo que é possível armazenar qualquer tipo de arquivo, como por exemplo, imagens, vídeos, documentos, entre outros. O S3 é um serviço muito importante para a criação de uma arquitetura na AWS, pois é nele que serão armazenados os arquivos da aplicação.
 
 Primeiramente criamos um bucket, sendo que o bucket é o local onde os arquivos serão armazenados, sendo que é possível definir o nome do bucket, a região onde ele será criado, entre outros. No meu caso, criei um bucket com o nome "felipe-bucket", com a região us-east-1 (N. Virginia), sendo que a região us-east-1 é a região padrão da conta utilizada. O bucket tem q ser criado direto no site da AWS na parte do S3.
 
+<img src="/img/Bucket.png">
+
 ### Aplicação
 
 Peguei a aplicação de um repositório e implementei ela no projeto, sendo que a aplicação é uma Fast-API com CRUD, sendo que ela é capaz de criar, ler, atualizar e deletar dados de um banco de dados MySQL. A aplicação é muito importante para a criação de uma arquitetura na AWS, pois é nela que será criada e executada.
+
+<img src="/img/Aplicacao.png">
 
 ### Melhorias futuras
 
@@ -102,6 +118,10 @@ Peguei a aplicação de um repositório e implementei ela no projeto, sendo que 
 entre outros ...
 
 ## Custos
+
+Uma possivel melhoria neses valores seria fazer o locust com uma maquina t2.micro, pois ele é um teste de carga e não precisa de uma maquina tão grande. ficaria muito mais barato.
+
+<img src="/img/Custo.png">
 
 ## Script de instalação da aplicação
 
