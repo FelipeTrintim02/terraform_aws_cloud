@@ -74,7 +74,7 @@ Para proteger a database, não deixei ele em um IP público e sim privado, tendo
 
 Partindo para a própria database, criamos um banco de dados MySQL, com o nome "dbfelipe", com o usuário "root" e a senha "root12345", com o tipo de instância db.t2.micro, com o armazenamento de 20GB, com o backup automático habilitado e com o Multi-AZ habilitado, sendo que o Multi-AZ é responsável por criar uma réplica do banco de dados em outra zona de disponibilidade, aumentando a disponibilidade do banco de dados e garantindo a redundância em caso de falhas em uma das zonas de disponibilidade, com um backup retido por 7 dias para garantir a segurança dos dados. Essa base foi conectada com o security group e com o db_subnet_group criados anteriormente.
 
-<img src="/img/Databases.png">
+<img src="/img/DataBases.png">
 
 ### Locust
 
